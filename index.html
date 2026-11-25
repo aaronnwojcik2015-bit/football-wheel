@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071a33">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Football Wheel</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#174b83,#07152b 65%,#030817);color:#fff;font-family:system-ui,Arial;padding:16px}
+main{max-width:600px;margin:auto}.card{background:#0b1b32dd;border:1px solid #315477;border-radius:16px;padding:14px;margin:12px 0}
+h1{text-align:center;margin:5px 0}.sub{text-align:center;color:#a9bfd8;font-size:12px;letter-spacing:3px}
+canvas{width:100%;max-width:440px;display:block;margin:auto}button,select{width:100%;padding:12px;border:0;border-radius:10px;font-weight:800;margin-top:8px}button{background:#e9b83f;color:#101827}button.red{background:#b83245;color:white}button.green{background:#16865d;color:white}button.blue{background:#245a91;color:white}select{background:#102b4b;color:white;border:1px solid #52769a}
+#result{text-align:center;min-height:72px;padding-top:12px}.muted{color:#a9bfd8;font-size:13px}.row{display:flex;justify-content:space-between;border-bottom:1px solid #29415e;padding:7px 0;font-size:13px}
+</style></head>
+<body><main>
+<div class="sub">LOSOWANIE • RANKINGI • PIŁKA NOŻNA</div><h1>⚽ FOOTBALL WHEEL</h1>
+<section class="card"><canvas id="wheel" width="600" height="600"></canvas><button id="spin">🎯 LOSUJ KLUB</button><div id="result"><div class="muted">TWÓJ KLUB TO</div><b style="font-size:22px">? ? ?</b></div></section>
+<section class="card"><div class="row"><span>Kluby w kole</span><b id="count">20</b></div><div class="row"><span>Wylosowano</span><b id="drawcount">0</b></div></section>
+<section class="card"><b>🗑️ Usuń klub z koła</b><select id="remove"></select><button class="red" id="removeBtn">USUŃ WYBRANY KLUB</button><button class="green" id="regen">🔄 REGENERUJ KOŁO</button><button class="blue" id="reset">⟲ RESETUJ WSZYSTKO</button></section>
+<section class="card"><b>🏆 Historia losowań</b><div id="history" class="muted">Jeszcze nic nie wylosowano.</div></section>
+<section class="card"><b>📊 Ranking demonstracyjny TOP 20</b><div id="ranking"></div><p class="muted">Punkty pochodzą z przykładowej tabeli w projekcie. Przed publikacją należy je zweryfikować z oficjalnym rankingiem UEFA.</p></section>
+</main>
+<script>
+const clubs=[["Bayern Monachium",147.5],["Real Madryt",144.5],["Paris Saint-Germain",132],["Liverpool",130],["Inter Mediolan",127],["Manchester City",125.5],["Arsenal",119],["FC Barcelona",113.25],["Bayer Leverkusen",105],["Atlético Madryt",104.75],["Borussia Dortmund",100.75],["AS Roma",97.75],["Benfica",90],["Atalanta",84],["Sporting CP",84],["Aston Villa",83],["FC Porto",80.75],["Manchester United",76.5],["Club Brugge",75.25],["Real Betis",74.5]];
+let left=clubs.map((_,i)=>i),history=[],angle=0,busy=false;
+const $=id=>document.getElementById(id),cv=$("wheel"),ctx=cv.getContext("2d"),colors=["#174c85","#d2a638","#17345b","#a62e45","#246b79","#57438b"];
+function paint(){let n=left.length;ctx.clearRect(0,0,600,600);ctx.save();ctx.translate(300,300);ctx.rotate(angle);if(!n){ctx.fillStyle="#142c49";ctx.beginPath();ctx.arc(0,0,275,0,7);ctx.fill();ctx.fillStyle="white";ctx.textAlign="center";ctx.font="bold 26px sans-serif";ctx.fillText("PUSTE KOŁO",0,8)}else{let s=2*Math.PI/n;left.forEach((idx,i)=>{let a=i*s-Math.PI/2;ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,275,a,a+s);ctx.closePath();ctx.fillStyle=colors[i%colors.length];ctx.fill();ctx.strokeStyle="#d9e7f5";ctx.lineWidth=2;ctx.stroke();ctx.save();ctx.rotate(a+s/2);ctx.textAlign="right";ctx.fillStyle="white";ctx.font="bold "+(n>14?15:19)+"px sans-serif";let name=clubs[idx][0];ctx.fillText(name.length>21?name.slice(0,20)+"…":name,255,5);ctx.restore()})}ctx.beginPath();ctx.arc(0,0,48,0,7);ctx.fillStyle="#07172c";ctx.fill();ctx.strokeStyle="#e8bd50";ctx.lineWidth=5;ctx.stroke();ctx.fillStyle="#f4ca61";ctx.font="bold 20px sans-serif";ctx.textAlign="center";ctx.fillText("UEFA",0,7);ctx.restore();ctx.fillStyle="#f4ca61";ctx.beginPath();ctx.moveTo(300,3);ctx.lineTo(278,48);ctx.lineTo(322,48);ctx.fill()}
+function render(){paint();$("count").textContent=left.length;$("drawcount").textContent=history.length;$("spin").disabled=busy||!left.length;$("remove").innerHTML=left.map(i=>`<option value="${i}">${clubs[i][0]}</option>`).join("")||"<option>Brak klubów</option>";$("history").innerHTML=history.length?history.map((i,k)=>`<div class="row"><span>${k+1}. ${clubs[i][0]}</span><b>${clubs[i][1].toFixed(3)}</b></div>`).join(""):"Jeszcze nic nie wylosowano.";$("ranking").innerHTML=clubs.map((c,i)=>`<div class="row"><span>${i+1}. ${c[0]} ${left.includes(i)?"":"(poza kołem)"}</span><b>${c[1].toFixed(3)}</b></div>`).join("")}
+function reset(){left=clubs.map((_,i)=>i);history=[];angle=0;$("result").innerHTML='<div class="muted">TWÓJ KLUB TO</div><b style="font-size:22px">? ? ?</b>';render()}
+$("spin").onclick=()=>{if(busy||!left.length)return;busy=true;render();let p=Math.floor(Math.random()*left.length),chosen=left[p],step=2*Math.PI/left.length,target=-(p+.5)*step;let delta=((target-angle)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)+Math.PI*2*(6+Math.random()*3),start=angle,t0=performance.now(),duration=4200;function frame(t){let x=Math.min(1,(t-t0)/duration);angle=start+delta*(1-Math.pow(1-x,4));paint();if(x<1)requestAnimationFrame(frame);else{angle=target;left.splice(p,1);history.push(chosen);busy=false;$("result").innerHTML=`<div class="muted">TWÓJ KLUB TO</div><b style="font-size:24px;color:#f4ca61">${clubs[chosen][0]}</b><div class="muted">Miejsce ${chosen+1} • ${clubs[chosen][1].toFixed(3)} pkt</div>`;render()}}requestAnimationFrame(frame)};
+$("removeBtn").onclick=()=>{if(!busy&&left.length){let i=Number($("remove").value);left=left.filter(x=>x!==i);render()}};
+$("regen").onclick=()=>{if(!busy)reset()};$("reset").onclick=()=>{if(!busy)reset()};reset();
+if("serviceWorker" in navigator && location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js");
+</script></body></html>
